@@ -4,30 +4,42 @@
 #include <ctime>
 #include <chrono>
 
-const double pi = 3.1415;
-
 struct Ray
 {
-	
+
 	Vect3 origin;
-	double resolution;
+    double resolution{ 0. };
 	Vect3 direction;
 	Vect3 castPosition;
-	double castDistance;
+    double castDistance{ 0. };
 
 	// parameters:
 	// setOrigin: the starting position from where the ray is cast
 	// horizontalAngle: the angle of direction the ray travels on the xy plane
-	// verticalAngle: the angle of direction between xy plane and ray 
+	// verticalAngle: the angle of direction between xy plane and ray
 	// 				  for example 0 radians is along xy plane and pi/2 radians is stright up
 	// resoultion: the magnitude of the ray's step, used for ray casting, the smaller the more accurate but the more expensive
 
 	Ray(Vect3 setOrigin, double horizontalAngle, double verticalAngle, double setResolution)
-		: origin(setOrigin), resolution(setResolution), direction(resolution*cos(verticalAngle)*cos(horizontalAngle), resolution*cos(verticalAngle)*sin(horizontalAngle),resolution*sin(verticalAngle)),
-		  castPosition(origin), castDistance(0)
+		: origin(setOrigin)
+        , resolution(setResolution)
+
+        , direction(
+            resolution*std::cos(verticalAngle)*std::cos(horizontalAngle),
+            resolution*std::cos(verticalAngle)*std::sin(horizontalAngle),
+            resolution*std::sin(verticalAngle))
+
+        , castPosition(origin)
+        , castDistance(0)
 	{}
 
-	void rayCast(const std::vector<Car>& cars, double minDistance, double maxDistance, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, double slopeAngle, double sderr)
+	void rayCast(
+        const std::vector<Car>& cars,
+        double minDistance,
+        double maxDistance,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
+        double slopeAngle,
+        double sderr)
 	{
 		// reset ray
 		castPosition = origin;
@@ -37,7 +49,6 @@ struct Ray
 
 		while(!collision && castDistance < maxDistance && (castPosition.y <= 6 && castPosition.y >= -6 && castPosition.x <= 50 && castPosition.x >= -15))
 		{
-
 			castPosition = castPosition + direction;
 			castDistance += resolution;
 
@@ -47,43 +58,50 @@ struct Ray
 			// check if there is any collisions with cars
 			if(!collision && castDistance < maxDistance)
 			{
-				for(Car car : cars)
+				for(const Car& car : cars)
 				{
-					collision |= car.checkCollision(castPosition);
-					if(collision)
-						break;
+                    if (car.checkCollision(castPosition))
+                    {
+                        collision = true;
+                        break;
+                    }
 				}
 			}
 		}
 
-		if((castDistance >= minDistance)&&(castDistance<=maxDistance)&& (castPosition.y <= 6 && castPosition.y >= -6 && castPosition.x <= 50 && castPosition.x >= -15))
+		if((castDistance >= minDistance)&&(castDistance<=maxDistance)
+            && (castPosition.y <= 6 && castPosition.y >= -6 && castPosition.x <= 50 && castPosition.x >= -15))
 		{
 			// add noise based on standard deviation error
 			double rx = ((double) rand() / (RAND_MAX));
 			double ry = ((double) rand() / (RAND_MAX));
 			double rz = ((double) rand() / (RAND_MAX));
-			cloud->points.push_back(pcl::PointXYZ(castPosition.x+rx*sderr, castPosition.y+ry*sderr, castPosition.z+rz*sderr));
+
+			cloud->points.emplace_back(pcl::PointXYZ(
+                castPosition.x+rx*sderr,
+                castPosition.y+ry*sderr,
+                castPosition.z+rz*sderr));
 		}
-			
+
 	}
 
 };
 
 struct Lidar
 {
-
 	std::vector<Ray> rays;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
 	std::vector<Car> cars;
 	Vect3 position;
-	double groundSlope;
-	double minDistance;
-	double maxDistance;
-	double resoultion;
-	double sderr;
+	double groundSlope{ 0. };
+	double minDistance{ 0. };
+	double maxDistance{ 0. };
+	double resoultion{ 0. };
+	double sderr{ 0. };
 
-	Lidar(std::vector<Car> setCars, double setGroundSlope)
-		: cloud(new pcl::PointCloud<pcl::PointXYZ>()), position(0,0,3.0)
+	Lidar(const std::vector<Car>& setCars, double setGroundSlope)
+		: cloud(new pcl::PointCloud<pcl::PointXYZ>())
+        , position(0,0,3.0)
 	{
 		// TODO:: set minDistance to 5 to remove points from roof of ego car
 		minDistance = 0;
@@ -97,16 +115,16 @@ struct Lidar
 		// TODO:: increase number of layers to 8 to get higher resoultion pcd
 		int numLayers = 64;
 		// the steepest vertical angle
-		double steepestAngle =  24.8*(-pi/180);
-		double angleRange = 26.8*(pi/180);
+		double steepestAngle =  24.8*(-M_PI/180);
+		double angleRange = 26.8*(M_PI /180);
 		// TODO:: set to pi/64 to get higher resoultion pcd
-		double horizontalAngleInc = pi/2250;
+		double horizontalAngleInc = M_PI /2250;
 
 		double angleIncrement = angleRange/numLayers;
 
 		for(double angleVertical = steepestAngle; angleVertical < steepestAngle+angleRange; angleVertical+=angleIncrement)
 		{
-			for(double angle = 0; angle <= 2*pi; angle+=horizontalAngleInc)
+			for(double angle = 0; angle <= 2* M_PI; angle+=horizontalAngleInc)
 			{
 				Ray ray(position,angle,angleVertical,resoultion);
 				rays.push_back(ray);
@@ -119,21 +137,30 @@ struct Lidar
 		// pcl uses boost smart pointers for cloud pointer so we don't have to worry about manually freeing the memory
 	}
 
-	void updateCars(std::vector<Car> setCars)
+	void updateCars(const std::vector<Car>& setCars)
 	{
 		cars = setCars;
 	}
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr scan()
 	{
- 
+
 		cloud->points.clear();
 		auto startTime = std::chrono::steady_clock::now();
-		for(Ray ray : rays)
-			ray.rayCast(cars, minDistance, maxDistance, cloud, groundSlope, sderr);
+
+        for (Ray ray : rays)
+        {
+            ray.rayCast(cars, minDistance, maxDistance, cloud, groundSlope, sderr);
+        }
+
 		auto endTime = std::chrono::steady_clock::now();
-		auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-		cout << "ray casting took " << elapsedTime.count() << " milliseconds" << endl;
+
+		auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime);
+
+		std::cout << "ray casting took " << elapsedTime.count()
+            << " milliseconds" << std::endl;
+
 		cloud->width = cloud->points.size();
 		cloud->height = 1; // one dimensional unorganized point cloud dataset
 		return cloud;

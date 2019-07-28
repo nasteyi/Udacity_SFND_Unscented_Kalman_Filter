@@ -11,7 +11,7 @@ void renderHighway(double distancePos, pcl::visualization::PCLVisualizer::Ptr& v
 	double roadLengthAhead = 50.0;
 	double roadLengthBehind = -15.0;
 	double roadWidth = 12.0;
-	double roadHeight = 0.2; 
+	double roadHeight = 0.2;
 
 	viewer->addCube(roadLengthBehind, roadLengthAhead, -roadWidth / 2, roadWidth / 2, -roadHeight, 0, .2, .2, .2, "highwayPavement");
 	viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "highwayPavement");
@@ -32,7 +32,7 @@ void renderHighway(double distancePos, pcl::visualization::PCLVisualizer::Ptr& v
 	while(markerPos < roadLengthBehind)
 		markerPos+=poleSpace;
 	int poleIndex = 0;
-	while(markerPos <= roadLengthAhead) 
+	while(markerPos <= roadLengthAhead)
 	{
 		//	left pole
 		viewer->addCube(-poleWidth/2+markerPos, poleWidth/2+markerPos, -poleWidth/2+roadWidth/2+poleCurve, poleWidth/2+roadWidth/2+poleCurve, 0, poleHeight, 1, 0.5, 0, "pole_"+std::to_string(poleIndex)+"l");
@@ -55,7 +55,6 @@ void renderHighway(double distancePos, pcl::visualization::PCLVisualizer::Ptr& v
 int countRays = 0;
 void renderRays(pcl::visualization::PCLVisualizer::Ptr& viewer, const Vect3& origin, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 {
-
 	for (pcl::PointXYZ point : cloud->points)
 	{
 		viewer->addLine(pcl::PointXYZ(origin.x, origin.y, origin.z), point, 1, 0, 0, "ray" + std::to_string(countRays));
@@ -74,7 +73,6 @@ void clearRays(pcl::visualization::PCLVisualizer::Ptr& viewer)
 
 void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::string name, Color color)
 {
-
 	viewer->addPointCloud<pcl::PointXYZ>(cloud, name);
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, name);
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, name);
@@ -82,7 +80,6 @@ void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, const pcl:
 
 void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, std::string name, Color color)
 {
-
 	if (color.r == -1)
 	{
 		// Select color based off of cloud intensity
@@ -99,13 +96,10 @@ void renderPointCloud(pcl::visualization::PCLVisualizer::Ptr& viewer, const pcl:
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, name);
 }
 
-// Draw wire frame box with filled transparent color 
+// Draw wire frame box with filled transparent color
 void renderBox(pcl::visualization::PCLVisualizer::Ptr& viewer, Box box, int id, Color color, float opacity)
 {
-	if (opacity > 1.0)
-		opacity = 1.0;
-	if (opacity < 0.0)
-		opacity = 0.0;
+    opacity = opacity > 0 ? (opacity < 1 ? opacity : 1) : 0;
 
 	std::string cube = "box" + std::to_string(id);
 	//viewer->addCube(box.bboxTransform, box.bboxQuaternion, box.cube_length, box.cube_width, box.cube_height, cube);
@@ -124,10 +118,7 @@ void renderBox(pcl::visualization::PCLVisualizer::Ptr& viewer, Box box, int id, 
 
 void renderBox(pcl::visualization::PCLVisualizer::Ptr& viewer, BoxQ box, int id, Color color, float opacity)
 {
-	if (opacity > 1.0)
-		opacity = 1.0;
-	if (opacity < 0.0)
-		opacity = 0.0;
+    opacity = opacity > 0 ? (opacity < 1 ? opacity : 1) : 0;
 
 	std::string cube = "box" + std::to_string(id);
 	viewer->addCube(box.bboxTransform, box.bboxQuaternion, box.cube_length, box.cube_width, box.cube_height, cube);
