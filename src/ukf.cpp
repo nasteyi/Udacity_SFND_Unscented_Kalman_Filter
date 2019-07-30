@@ -88,31 +88,29 @@ UKF::UKF()
     , n_aug_{ 7 }
 
     // Sigma point spreading parameter
-    , lambda_{ 3 - n_x_ }
+    , lambda_{ 3.0 - n_x_ }
 
-    // initial state vector
-    , x_{ Eigen::VectorXd::Zero(n_x_) }
-
-    // initial covariance matrix
-    , P_{ Eigen::MatrixXd::Zero(n_x_, n_x_) }
-
-    // predicted sigma points matrix
-    , Xsig_pred_{ Eigen::MatrixXd::Zero(n_x_, 2 * n_aug_ + 1) }
-
-    // Weights of sigma points
-    , weights_{ Eigen::VectorXd::Zero(2 * n_aug_ + 1) }
-
-    , NIS_radar_{ 0 }
-    , NIS_laser_{ 0 }
     , previous_timestamp_{ 0 }
 
     // measurement noise covariance matrix
     , R_radar_{ initNoiseMatrix({std_radr_, std_radphi_, std_radrd_}) }
     , R_laser_{ initNoiseMatrix({std_laspx_, std_laspy_}) }
 {
+    // initial state vector
+    x_ = Eigen::VectorXd::Zero(n_x_);
+
+    // initial covariance matrix
+    P_ = Eigen::MatrixXd::Zero(n_x_, n_x_);
+
+    // predicted sigma points matrix
+    Xsig_pred_ = Eigen::MatrixXd::Zero(n_x_, 2 * n_aug_ + 1);
+
+    // Weights of sigma points
+    weights_ = Eigen::VectorXd::Zero(2 * n_aug_ + 1);
 }
 
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
+void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
+{
     /**
      * TODO: Complete this function! Make sure you switch between LiDAR and radar
      * measurements.
@@ -126,27 +124,22 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         return;
     }
 
-    /*****************************************************************************
-     *  Initialization
-     ****************************************************************************/
+    double dt = 1e-6 * static_cast<double>(
+        meas_package.timestamp_ - previous_timestamp_);
+
+    previous_timestamp_ = meas_package.timestamp_;   
+
+    // Initialization
     if (!is_initialized_)
     {
-        /**
-         * Initialize the state with the first measurement.
-         */
-        x_ = Eigen::VectorXd();
-
         if (meas_package.sensor_type_ == MeasurementPackage::RADAR)
         {
-            // Convert radar from polar to cartesian coordinates and initialize state
             const double ro = meas_package.raw_measurements_(0);
             const double phi = meas_package.raw_measurements_(1);
             x_ << ro * std::cos(phi), ro * std::sin(phi), 0, 0, 0;
         }
         else if (meas_package.sensor_type_ == MeasurementPackage::LASER)
         {
-            // Initialize state
-            // Set the state with the initial location and zero velocity
             x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
         }
         else
@@ -154,44 +147,32 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             assert(0 && "unknown sensor");
         }
 
-        previous_timestamp_ = meas_package.timestamp_;
-        // Done initializing, no need to predict or update
         is_initialized_ = true;
         return;
     }
 
-    /*****************************************************************************
+    /*
      * Prediction
-     * Update the state transition matrix F according to the new elapsed time. Time is measured in seconds.
-     * Update the process noise covariance matrix.
-     ****************************************************************************/
+     * Update the state transition matrix F according to the new elapsed time.
+     * Update the process noise covariance matrix */
 
-     //compute the time elapsed between the current and previous measurements, dt - expressed in seconds
-
-    double dt = 1e-6 * static_cast<double>(
-        meas_package.timestamp_ - previous_timestamp_);
-
-    previous_timestamp_ = meas_package.timestamp_;
-
-    // TODO: plot NIS
-    // TODO: compare the converge rate with/without radar
-
-    // Improve the stability by subdividing the prediction step for large delta_t’s into incremental updates
+    // Improve the stability by subdividing the prediction step for large delta_ts into incremental updates
     // Otherwise Cholesky decomposition may fail
     const double delta_t = 0.05;
 
-    while (dt > 2 * delta_t) {
+    while (dt > 2 * delta_t)
+    {
         Predict(delta_t);
         dt -= delta_t;
     }
 
     Predict(dt);
 
-    /*****************************************************************************
+    /*
      * Update
      * Use the sensor type to perform the update step.
      * Update the state and covariance matrices.
-     ****************************************************************************/
+    */
     n_z_ = 0;
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR)
     {
@@ -220,22 +201,10 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR)
     {
         PredictRadarMeasurement();
-        // update NIS
-        NIS_radar_ = (meas_package.raw_measurements_ - z_pred_).transpose()
-            * S_.inverse()
-            * (meas_package.raw_measurements_ - z_pred_);
-
-        std::cout << "NIS Radar = " << NIS_radar_ << std::endl;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER)
     {
         PredictLaserMeasurement();
-        // update NIS
-        NIS_laser_ = (meas_package.raw_measurements_ - z_pred_).transpose()
-            * S_.inverse()
-            * (meas_package.raw_measurements_ - z_pred_);
-
-        std::cout << "NIS LiDAR = " << NIS_laser_ << std::endl;
     }
     else
     {
@@ -254,7 +223,6 @@ void UKF::Predict(double dt)
      * Modify the state vector, x_. Predict sigma points, the state,
      * and the state covariance matrix.
      */
-
     Eigen::MatrixXd Xsig_aug = Eigen::MatrixXd::Zero(n_aug_, 2 * n_aug_ + 1);
     GenerateAugmentedSigmaPoints(Xsig_aug);
     SigmaPointPrediction(Xsig_aug, dt);
@@ -384,7 +352,9 @@ void UKF::PredictMeanAndCovariance()
 }
 
 
-void UKF::PredictRadarMeasurement() {
+void UKF::PredictRadarMeasurement()
+{
+   
     //transform sigma points into measurement space
     for (int i = 0; i < 2 * n_aug_ + 1; ++i)
     {  //2n+1 sigma points

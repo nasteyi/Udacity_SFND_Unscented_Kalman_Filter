@@ -43,6 +43,7 @@ lmarker Tools::lidarSense(
     meas_package.raw_measurements_ << marker.x, marker.y;
     meas_package.timestamp_ = timestamp;
 
+ 
     car.ukf.ProcessMeasurement(meas_package);
 
     return marker;
@@ -61,7 +62,7 @@ rmarker Tools::radarSense(
         (car.position.y - ego.position.y) * (car.position.y - ego.position.y));
 
 	double phi = std::atan2(
-        car.position.y - ego.position.y
+        car.position.y - ego.position.y,
         car.position.x - ego.position.x);
 
 	double rho_dot = (car.velocity*std::cos(car.angle)*rho*std::cos(phi)
@@ -145,7 +146,7 @@ void Tools::ukfResults(
 		double ct = dt;
 		while(ct <= time)
 		{
-			ukf.Prediction(dt);
+			ukf.Predict(dt);
 
 			viewer->addSphere(
                 pcl::PointXYZ(ukf.x_[0], ukf.x_[1],3.5),

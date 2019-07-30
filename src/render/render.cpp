@@ -6,7 +6,6 @@
 
 void renderHighway(double distancePos, pcl::visualization::PCLVisualizer::Ptr& viewer)
 {
-
 	// units in meters
 	double roadLengthAhead = 50.0;
 	double roadLengthBehind = -15.0;
@@ -30,7 +29,9 @@ void renderHighway(double distancePos, pcl::visualization::PCLVisualizer::Ptr& v
 	//double distancePos = 7;
 	double markerPos = (roadLengthBehind/poleSpace)*poleSpace-distancePos;
 	while(markerPos < roadLengthBehind)
+	{
 		markerPos+=poleSpace;
+	}
 	int poleIndex = 0;
 	while(markerPos <= roadLengthAhead)
 	{

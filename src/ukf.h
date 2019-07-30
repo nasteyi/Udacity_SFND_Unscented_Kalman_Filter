@@ -19,7 +19,7 @@ public:
      * ProcessMeasurement
      * @param meas_package The latest measurement data of either radar or laser
      */
-    void ProcessMeasurement(MeasurementPackage meas_package);
+    void ProcessMeasurement(const MeasurementPackage& meas_package);
 
     /**
      * Prediction Predicts sigma points, the state, and the state covariance
@@ -40,10 +40,10 @@ public:
     bool is_initialized_{ false };
 
     // if this is false, laser measurements will be ignored (except for init)
-    const bool use_laser_;
+    bool use_laser_;
 
     // if this is false, radar measurements will be ignored (except for init)
-    const bool use_radar_;
+    bool use_radar_;
 
     // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
     Eigen::VectorXd x_;
@@ -55,43 +55,37 @@ public:
     Eigen::MatrixXd Xsig_pred_;
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    const double std_a_;
+    double std_a_;
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    const double std_yawdd_;
+    double std_yawdd_;
 
     // Laser measurement noise standard deviation position1 in m
-    const double std_laspx_;
+    double std_laspx_;
 
     // Laser measurement noise standard deviation position2 in m
-    const double std_laspy_;
+    double std_laspy_;
 
     // Radar measurement noise standard deviation radius in m
-    const double std_radr_;
+    double std_radr_;
 
     // Radar measurement noise standard deviation angle in rad
-    const double std_radphi_;
+    double std_radphi_;
 
     // Radar measurement noise standard deviation radius change in m/s
-    const double std_radrd_;
+    double std_radrd_;
 
     // Weights of sigma points
     Eigen::VectorXd weights_;
 
     // State dimension
-    const int n_x_;
+    int n_x_;
 
     // Augmented state dimension
-    const int n_aug_;
+    int n_aug_;
 
     // Sigma point spreading parameter
-    const double lambda_;
-
-    // current NIS for radar
-    double NIS_radar_;
-
-    // current NIS for laser
-    double NIS_laser_;
+    double lambda_;
 
 private:
     // previous timestamp
@@ -110,7 +104,7 @@ private:
     Eigen::MatrixXd S_;
 
     //measurement noise covariance matrix
-    const Eigen::MatrixXd R_laser_;
-    const Eigen::MatrixXd R_radar_;
+    Eigen::MatrixXd R_laser_;
+    Eigen::MatrixXd R_radar_;
 
 };

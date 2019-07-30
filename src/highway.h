@@ -10,8 +10,9 @@ class Highway
 public:
 
 	std::vector<Car> traffic;
+	Tools tools;	
 	Car egoCar;
-	Tools tools;
+
 	bool pass = true;
 	std::vector<double> rmseThreshold = {0.30,0.16,0.95,0.70};
 	std::vector<double> rmseFailLog = {0.0,0.0,0.0,0.0};
@@ -31,11 +32,9 @@ public:
 	// --------------------------------
 
 	explicit Highway(pcl::visualization::PCLVisualizer::Ptr& viewer)
+		: tools()
+		, egoCar(Vect3(0, 0, 0), Vect3(4, 2, 2), Color(0, 1, 0), 0, 0, 2, "egoCar")
 	{
-		tools = Tools();
-
-		egoCar = Car(Vect3(0, 0, 0), Vect3(4, 2, 2), Color(0, 1, 0), 0, 0, 2, "egoCar");
-
 		Car car1(Vect3(-10, 4, 0), Vect3(4, 2, 2), Color(0, 0, 1), 5, 0, 2, "car1");
 
 		std::vector<accuation> car1_instructions;
@@ -93,7 +92,6 @@ public:
 			car3.setUKF(ukf3);
 		}
 		traffic.emplace_back(car3);
-
 		lidar = new Lidar(traffic,0);
 
 		// render environment
@@ -102,10 +100,11 @@ public:
 		car1.render(viewer);
 		car2.render(viewer);
 		car3.render(viewer);
+
 	}
 
 
-    ~Highway() :
+    ~Highway()
     {
         if (lidar)
         {
@@ -120,6 +119,7 @@ public:
         int frame_per_sec,
         pcl::visualization::PCLVisualizer::Ptr& viewer)
 	{
+
 		if(visualize_pcd)
 		{
 			pcl::PointCloud<pcl::PointXYZ>::Ptr trafficCloud = tools.loadPcd(
@@ -134,6 +134,7 @@ public:
 
 		// render highway environment with poles
 		renderHighway(egoVelocity*timestamp/1e6, viewer);
+
 		egoCar.render(viewer);
 
         const double dt = 1.0 / frame_per_sec;

@@ -18,11 +18,12 @@ struct Color
     float g{ 0.f };
     float b{ 0.f };
 
-	Color(float setR, float setG, float setB)
+	explicit Color(float setR, float setG, float setB)
 		: r(setR)
         , g(setG)
         , b(setB)
-	{}
+	{
+	}
 };
 
 struct Vect3
@@ -31,11 +32,12 @@ struct Vect3
     double y{ 0.0 };
     double z{ 0.0 };
 
-	Vect3(double setX, double setY, double setZ)
+	explicit Vect3(double setX, double setY, double setZ)
 		: x(setX)
         , y(setY)
         , z(setZ)
-	{}
+	{
+	}
 
 	Vect3 operator+(const Vect3& vec)
 	{
@@ -65,10 +67,11 @@ struct accuation
 struct Car
 {
 	// units in meters
-	Vect3 position, dimensions;
-	Eigen::Quaternionf orientation;
+	Vect3 position = Vect3(0,0,0);
+	Vect3 dimensions = Vect3(0,0,0);
+	Eigen::Quaternionf orientation{};
 	std::string name;
-	Color color;
+	Color color = Color(0,0,0);
     float velocity{ 0.f };
 	float angle{ 0.f };
 	float acceleration{ 0.f };
@@ -76,7 +79,7 @@ struct Car
 	// distance between front of vehicle and center of gravity
 	float Lf{ 0.f };
 
-	UKF ukf;
+	UKF ukf{};
 
 	//accuation instructions
 	std::vector<accuation> instructions;
@@ -85,37 +88,35 @@ struct Car
 	double sinNegTheta{ 0. };
 	double cosNegTheta{ 0. };
 
-	Car()
-		: position(Vect3(0,0,0)), dimensions(Vect3(0,0,0)), color(Color(0,0,0))
-	{}
+	Car() = default;
 
-	Car(
-        Vect3 setPosition,
-        Vect3 setDimensions,
-        Color setColor,
+	explicit Car(
+        const Vect3& setPosition,
+        const Vect3& setDimensions,
+        const Color& setColor,
         float setVelocity,
         float setAngle,
         float setLf,
-        std::string setName)
+        const std::string& setName)
 		: position(setPosition)
         , dimensions(setDimensions)
+		, orientation(getQuaternion(setAngle))
+	    , name(setName)
         , color(setColor)
         , velocity(setVelocity)
         , angle(setAngle)
+		, acceleration(0.f)
+        , steering(0.f)
         , Lf(setLf)
-        , name(setName)
+		, ukf()
+		, accuateIndex(-1)
+		, sinNegTheta(std::sin(-setAngle))
+		, cosNegTheta(std::cos(-setAngle))		
 	{
-		orientation = getQuaternion(angle);
-		acceleration = 0;
-		steering = 0;
-		accuateIndex = -1;
-
-		sinNegTheta = std::sin(-angle);
-		cosNegTheta = std::cos(-angle);
 	}
 
 	// angle around z axis
-	Eigen::Quaternionf getQuaternion(float theta)
+	static Eigen::Quaternionf getQuaternion(float theta)
 	{
 		Eigen::Matrix3f rotation_mat;
 
