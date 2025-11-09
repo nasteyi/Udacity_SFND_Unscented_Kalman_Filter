@@ -35,9 +35,8 @@ public:
     void PredictLaserMeasurement();
     void UpdateState(const Eigen::VectorXd& z);
 
-
     // initially set to false, set to true in first call of ProcessMeasurement
-    bool is_initialized_{ false };
+    bool is_initialized_{false};
 
     // if this is false, laser measurements will be ignored (except for init)
     bool use_laser_;
@@ -89,22 +88,21 @@ public:
 
 private:
     // previous timestamp
-    long previous_timestamp_{ -1 };
+    long previous_timestamp_{-1};
 
-    //set measurement dimension, radar can measure r, phi, and r_dot
-    int n_z_{ 0 };
+    // set measurement dimension, radar can measure r, phi, and r_dot
+    int n_z_{0};
 
-    //create matrix for sigma points in measurement space
+    // create matrix for sigma points in measurement space
     Eigen::MatrixXd Zsig_;
 
-    //mean predicted measurement
+    // mean predicted measurement
     Eigen::VectorXd z_pred_;
 
-    //measurement covariance matrix S
+    // measurement covariance matrix S
     Eigen::MatrixXd S_;
 
-    //measurement noise covariance matrix
+    // measurement noise covariance matrix
     Eigen::MatrixXd R_laser_;
     Eigen::MatrixXd R_radar_;
-
 };

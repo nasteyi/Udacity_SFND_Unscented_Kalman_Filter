@@ -3,14 +3,10 @@
 
 #include "Eigen/Dense"
 
-struct MeasurementPackage
-{
-    long long timestamp_{ -1 };
+struct MeasurementPackage {
+    long long timestamp_{-1};
 
-    enum SensorType{
-        LASER,
-        RADAR
-    } sensor_type_;
+    enum SensorType { LASER, RADAR } sensor_type_;
 
     Eigen::VectorXd raw_measurements_;
 };
